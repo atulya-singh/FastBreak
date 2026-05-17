@@ -1,0 +1,25 @@
+# Build output
+build/
+out/
+cmake-build-*/
+
+# CMake generated files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+CTestTestfile.cmake
+Makefile
+*.cmake.stamp
+_deps/
+
+# Compiled artifacts
+*.o
+*.a
+*.so
+*.out
+
+# Editor / OS cruft
+.DS_Store
+.idea/
+.vscode/
+compile_commands.json
