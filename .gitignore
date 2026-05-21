@@ -1,5 +1,6 @@
 # Build output
 build/
+build-linux/
 out/
 cmake-build-*/
 
@@ -23,3 +24,7 @@ _deps/
 .idea/
 .vscode/
 compile_commands.json
+
+# Markdown docs are kept local only — never published to the remote.
+*.md
+!.gitkeep
