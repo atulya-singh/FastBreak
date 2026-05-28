@@ -4,8 +4,11 @@
 # so it cannot build on the macOS host. This image provides the C++20 toolchain
 # used to compile, test, and run the stack.
 #
-# Build:  docker build -t uxnet-dev -f docker/Dockerfile .
-# Shell:  docker run --rm -it -v "$PWD":/work -w /work uxnet-dev
+# uxnet targets x86_64 (RDTSC, x86 intrinsics), so build/run this image as
+# linux/amd64 — emulated via QEMU on Apple Silicon hosts.
+#
+# Build:  docker build --platform linux/amd64 -t uxnet-dev -f docker/Dockerfile .
+# Shell:  docker run --rm -it --platform linux/amd64 -v "$PWD":/work -w /work uxnet-dev
 #
 # Live packet capture additionally needs raw-socket capability and host
 # networking; run those with:

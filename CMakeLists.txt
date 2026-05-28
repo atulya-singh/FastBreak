@@ -35,6 +35,10 @@ set(UXNET_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
 file(GLOB_RECURSE UXNET_SOURCES CONFIGURE_DEPENDS
   ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
 
+# Standalone src/ apps (have their own main) — build as executables, not lib.
+set(UXNET_SRC_APPS ${CMAKE_CURRENT_SOURCE_DIR}/src/capture.cpp)
+list(REMOVE_ITEM UXNET_SOURCES ${UXNET_SRC_APPS})
+
 if(UXNET_SOURCES)
   add_library(uxnet_lib STATIC ${UXNET_SOURCES})
   target_include_directories(uxnet_lib PUBLIC ${UXNET_INCLUDE_DIR})
@@ -95,4 +99,26 @@ foreach(bench_src ${UXNET_BENCH_SOURCES})
   set_target_properties(${bench_name} PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/benchmarks)
   add_dependencies(bench ${bench_name})
+endforeach()
+
+# ---------------------------------------------------------------------------
+# Standalone src/ apps and tools/ utilities — one executable each.
+# ---------------------------------------------------------------------------
+foreach(app_src ${UXNET_SRC_APPS})
+  get_filename_component(app_name ${app_src} NAME_WE)
+  add_executable(${app_name} ${app_src})
+  target_link_libraries(${app_name} PRIVATE uxnet_lib)
+  target_include_directories(${app_name} PRIVATE ${UXNET_INCLUDE_DIR})
+endforeach()
+
+file(GLOB UXNET_TOOL_SOURCES CONFIGURE_DEPENDS
+  ${CMAKE_CURRENT_SOURCE_DIR}/tools/*.cpp)
+
+foreach(tool_src ${UXNET_TOOL_SOURCES})
+  get_filename_component(tool_name ${tool_src} NAME_WE)
+  add_executable(${tool_name} ${tool_src})
+  target_link_libraries(${tool_name} PRIVATE uxnet_lib)
+  target_include_directories(${tool_name} PRIVATE ${UXNET_INCLUDE_DIR})
+  set_target_properties(${tool_name} PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/tools)
 endforeach()

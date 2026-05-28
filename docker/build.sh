@@ -13,12 +13,20 @@ IMAGE=uxnet-dev
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TARGET="${1:-}"
 
+# uxnet targets x86_64 HFT hardware (RDTSC, x86 intrinsics). Build/run the
+# container as linux/amd64 — under QEMU emulation on Apple Silicon hosts.
+PLATFORM=linux/amd64
+
 # Build the image if it is missing.
 if ! docker image inspect "$IMAGE" >/dev/null 2>&1; then
-  docker build -t "$IMAGE" -f "$REPO_ROOT/docker/Dockerfile" "$REPO_ROOT"
+  docker build --platform "$PLATFORM" -t "$IMAGE" \
+    -f "$REPO_ROOT/docker/Dockerfile" "$REPO_ROOT"
 fi
 
-run() { docker run --rm -v "$REPO_ROOT":/work -w /work "$IMAGE" bash -c "$1"; }
+run() {
+  docker run --rm --platform "$PLATFORM" \
+    -v "$REPO_ROOT":/work -w /work "$IMAGE" bash -c "$1"
+}
 
 run "cmake -S . -B build-linux -G Ninja"
 run "cmake --build build-linux -j"
