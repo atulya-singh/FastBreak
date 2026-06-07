@@ -19,7 +19,6 @@ size_t round_up(size_t bytes, size_t multiple) {
   return ((bytes + multiple - 1) / multiple) * multiple;
 }
 
-// Reads a "Key:  N kB" line from /proc/meminfo and returns N, or 0 if absent.
 size_t read_meminfo_field(const char* key) {
   std::ifstream meminfo("/proc/meminfo");
   std::string name;
@@ -27,8 +26,6 @@ size_t read_meminfo_field(const char* key) {
   std::string unit;
   while (meminfo >> name >> value >> unit) {
     if (name == key) return value;
-    // Lines without a trailing unit (rare) still consumed a token above; the
-    // stream self-corrects on the next iteration.
   }
   return 0;
 }
@@ -49,8 +46,7 @@ std::mutex& HugePageAllocator::registry_mutex() {
 void* HugePageAllocator::allocate(size_t bytes, bool force_huge) {
   const size_t len = round_up(bytes, HUGE_PAGE_SIZE);
 
-  // MAP_POPULATE prefaults the whole region so the fault cost is paid here, not
-  // on the hot path. MAP_HUGETLB requests 2 MB pages.
+  // MAP_POPULATE prefaults the region so faults are paid here, not on the hot path.
   void* p = ::mmap(nullptr, len, PROT_READ | PROT_WRITE,
                    MAP_HUGETLB | MAP_ANONYMOUS | MAP_PRIVATE | MAP_POPULATE,
                    -1, 0);
