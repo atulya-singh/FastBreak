@@ -36,7 +36,9 @@ file(GLOB_RECURSE UXNET_SOURCES CONFIGURE_DEPENDS
   ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
 
 # Standalone src/ apps (have their own main) — build as executables, not lib.
-set(UXNET_SRC_APPS ${CMAKE_CURRENT_SOURCE_DIR}/src/capture.cpp)
+set(UXNET_SRC_APPS
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/capture.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/multiqueue_capture.cpp)
 list(REMOVE_ITEM UXNET_SOURCES ${UXNET_SRC_APPS})
 
 if(UXNET_SOURCES)
