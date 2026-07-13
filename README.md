@@ -13,6 +13,37 @@ use to hit sub-microsecond, jitter-free packet processing. The whole thing
 optimizes for **latency first, throughput second, clarity third**: every
 hot-path function is allocation-free and branch-minimized.
 
+## Metrics
+
+Measured in-container (Ubuntu 22.04, loopback). Relative results and
+correctness guarantees hold on any platform; absolute NIC throughput, hardware
+TLB counters, and true wire latency are produced by `final_benchmark` on bare
+metal (see below).
+
+| Metric | Result |
+|---|---|
+| Zero-copy vs copy-based parse | **49% lower** p50 per-packet latency (42 ns vs 83 ns) |
+| Loopback RTT, p50 | raw busy-poll UDP **1.58 µs** · kernel UDP 1.79 µs · TCP-Lite 6.9 µs |
+| TCP-Lite reliability | 100 MB verified intact under **1% packet loss** and full reordering |
+| RSS fan-out balance | 1M packets within **±15%** across 8 queues |
+| Toeplitz RSS hash | bit-exact match to Intel 82599 datasheet vectors |
+| Cache-line discipline | 64 B buffer descriptors · false-sharing-free SPSC handoff |
+| Syscalls in steady-state hot path | **0** (by construction) |
+| Heap allocations in hot path | **0** (pre-allocated pools) |
+| Test suite | 17/17 passing |
+
+TCP-Lite's extra ~5 µs is its CRC32 + ARQ machinery — the honest cost of
+reliability over raw UDP.
+
+**Run the full suite** (throughput, hardware TLB-miss reduction, ring→app
+latency, syscall proof) on real x86-64 Linux:
+
+```sh
+echo 512 | sudo tee /proc/sys/vm/nr_hugepages       # reserve huge pages
+sudo sysctl -w kernel.perf_event_paranoid=1         # allow perf counters
+sudo ./build-linux/benchmarks/final_benchmark lo    # writes RESULTS.md
+```
+
 ## Architecture
 
 Five layers, each independently testable:
@@ -50,34 +81,6 @@ Five layers, each independently testable:
   control, congestion control, and Nagle — all latency poison for HFT. It keeps
   only what correctness needs: CRC32 integrity, fixed-timeout retransmit, and a
   256-packet bitmap window for out-of-order tracking.
-
-## Metrics
-
-Measured in-container (Ubuntu 22.04, loopback). Relative results and
-correctness guarantees hold on any platform; absolute NIC throughput, hardware
-TLB counters, and true wire latency are produced by `final_benchmark` on bare
-metal (see below).
-
-| Metric | Result |
-|---|---|
-| Zero-copy vs copy-based parse | **49% lower** p50 per-packet latency (42 ns vs 83 ns) |
-| Loopback RTT, p50 | raw busy-poll UDP **1.58 µs** · kernel UDP 1.79 µs · TCP-Lite 6.9 µs |
-| TCP-Lite reliability | 100 MB verified intact under **1% packet loss** and full reordering |
-| Syscalls in steady-state hot path | **0** (by construction) |
-| Heap allocations in hot path | **0** (pre-allocated pools) |
-| Test suite | 17/17 passing |
-
-TCP-Lite's extra ~5 µs is its CRC32 + ARQ machinery — the honest cost of
-reliability over raw UDP.
-
-**Run the full suite** (throughput, hardware TLB-miss reduction, ring→app
-latency, syscall proof) on real x86-64 Linux:
-
-```sh
-echo 512 | sudo tee /proc/sys/vm/nr_hugepages       # reserve huge pages
-sudo sysctl -w kernel.perf_event_paranoid=1         # allow perf counters
-sudo ./build-linux/benchmarks/final_benchmark lo    # writes RESULTS.md
-```
 
 ## Building
 
